@@ -17,6 +17,7 @@ const util_1 = require("./util/util");
 (() => __awaiter(this, void 0, void 0, function* () {
     // Init the Express application
     const app = express_1.default();
+    let abs_path;
     // Set the network port
     const port = process.env.PORT || 8082;
     // Use the body parser middleware for post requests
@@ -35,11 +36,22 @@ const util_1 = require("./util/util");
     // RETURNS
     //   the filtered image file [!!TIP res.sendFile(filteredpath); might be useful]
     app.get('/filteredimage', (req, res) => __awaiter(this, void 0, void 0, function* () {
-        let url = req.query.image_url;
-        util_1.filterImageFromURL(url).then((value) => {
-            res.send(value);
-        });
-        //res.send (url);
+        try {
+            let url = req.query.image_url;
+            //let value:string = await filterImageFromURL(url);
+            //res.status(200).sendFile(value);
+            //deleteLocalFiles([value]);
+            util_1.filterImageFromURL(url).then((value) => {
+                abs_path = value;
+                res.status(200).sendFile(value);
+                res.on('finish', () => {
+                    util_1.deleteLocalFiles([abs_path]);
+                });
+            });
+        }
+        catch (e) {
+            res.status(500).send("Error");
+        }
     }));
     /**************************************************************************** */
     //! END @TODO1
@@ -55,6 +67,9 @@ const util_1 = require("./util/util");
           res.send("ok"+n);
       })
     */
+    app.all('*', (req, res) => {
+        res.status(404).send('<h1>404! Page not found</h1>');
+    });
     // Start the Server
     app.listen(port, () => {
         console.log(`server running http://localhost:${port}`);

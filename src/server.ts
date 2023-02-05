@@ -1,12 +1,15 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import {filterImageFromURL, deleteLocalFiles} from './util/util';
+import { Request,Response } from 'express';
 import { send } from 'process';
+import { unlink } from 'fs';
+import fs from "fs";
 (async () => {
 
   // Init the Express application
   const app = express();
-
+  let abs_path:string;
   // Set the network port
   const port = process.env.PORT || 8082;
   
@@ -26,14 +29,27 @@ import { send } from 'process';
   //    image_url: URL of a publicly accessible image
   // RETURNS
   //   the filtered image file [!!TIP res.sendFile(filteredpath); might be useful]
-  app.get('/filteredimage',async (req,res) => {
-
+  app.get('/filteredimage',async (req: Request, res: Response) => {
+    try{
+        
    let url:string = req.query.image_url;
+   //let value:string = await filterImageFromURL(url);
+   //res.status(200).sendFile(value);
+   //deleteLocalFiles([value]);
   filterImageFromURL(url).then((value)=> {
-    res.send(value);
+    abs_path=value;
+    res.status(200).sendFile(value);
+    res.on('finish',()=>{
+      deleteLocalFiles([abs_path])
+    });
   })
   //res.send (url);
+  ;
+}
 
+catch (e) {
+  res.status(500).send("Error");
+}
   })
   /**************************************************************************** */
   //! END @TODO1
@@ -51,6 +67,9 @@ import { send } from 'process';
       res.send("ok"+n);
   })
 */ 
+app.all('*', (req:Request , res: Response) => {
+  res.status(404).send('<h1>404! Page not found</h1>');
+});
   // Start the Server
   app.listen( port, () => {
       console.log( `server running http://localhost:${ port }` );
